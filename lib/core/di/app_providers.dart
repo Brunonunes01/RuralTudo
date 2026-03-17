@@ -30,6 +30,19 @@ import '../../features/expenses/domain/usecases/delete_expense_usecase.dart';
 import '../../features/expenses/domain/usecases/get_expenses_usecase.dart';
 import '../../features/expenses/domain/usecases/upsert_expense_usecase.dart';
 import '../../features/expenses/presentation/controllers/expense_controller.dart';
+import '../../features/farm/data/datasources/farm_local_datasource.dart';
+import '../../features/farm/domain/entities/farm_area.dart';
+import '../../features/farm/domain/entities/farm_expense.dart';
+import '../../features/farm/domain/entities/harvest.dart';
+import '../../features/farm/domain/entities/harvest_sale.dart';
+import '../../features/farm/domain/entities/modules_config.dart';
+import '../../features/farm/domain/entities/planting.dart';
+import '../../features/farm/presentation/controllers/areas_controller.dart';
+import '../../features/farm/presentation/controllers/farm_expenses_controller.dart';
+import '../../features/farm/presentation/controllers/farm_sales_controller.dart';
+import '../../features/farm/presentation/controllers/harvests_controller.dart';
+import '../../features/farm/presentation/controllers/modules_settings_controller.dart';
+import '../../features/farm/presentation/controllers/plantings_controller.dart';
 import '../../features/products/data/datasources/product_local_datasource.dart';
 import '../../features/products/data/repositories/product_repository_impl.dart';
 import '../../features/products/domain/entities/product.dart';
@@ -68,8 +81,12 @@ import '../../features/stock/presentation/controllers/stock_controller.dart';
 import '../database/database_service.dart';
 import '../services/inventory_service.dart';
 
-final databaseServiceProvider = Provider<DatabaseService>((ref) => DatabaseService());
-final inventoryServiceProvider = Provider<InventoryService>((ref) => InventoryService());
+final databaseServiceProvider = Provider<DatabaseService>(
+  (ref) => DatabaseService(),
+);
+final inventoryServiceProvider = Provider<InventoryService>(
+  (ref) => InventoryService(),
+);
 
 final categoryDatasourceProvider = Provider<CategoryLocalDatasource>(
   (ref) => CategoryLocalDatasource(ref.read(databaseServiceProvider)),
@@ -79,12 +96,12 @@ final categoryRepositoryProvider = Provider<CategoryRepository>(
 );
 final categoryControllerProvider =
     StateNotifierProvider<CategoryController, AsyncValue<List<Category>>>(
-  (ref) => CategoryController(
-    GetCategoriesUseCase(ref.read(categoryRepositoryProvider)),
-    UpsertCategoryUseCase(ref.read(categoryRepositoryProvider)),
-    DeleteCategoryUseCase(ref.read(categoryRepositoryProvider)),
-  ),
-);
+      (ref) => CategoryController(
+        GetCategoriesUseCase(ref.read(categoryRepositoryProvider)),
+        UpsertCategoryUseCase(ref.read(categoryRepositoryProvider)),
+        DeleteCategoryUseCase(ref.read(categoryRepositoryProvider)),
+      ),
+    );
 
 final productDatasourceProvider = Provider<ProductLocalDatasource>(
   (ref) => ProductLocalDatasource(ref.read(databaseServiceProvider)),
@@ -94,12 +111,12 @@ final productRepositoryProvider = Provider<ProductRepository>(
 );
 final productControllerProvider =
     StateNotifierProvider<ProductController, AsyncValue<List<Product>>>(
-  (ref) => ProductController(
-    GetProductsUseCase(ref.read(productRepositoryProvider)),
-    UpsertProductUseCase(ref.read(productRepositoryProvider)),
-    DeleteProductUseCase(ref.read(productRepositoryProvider)),
-  ),
-);
+      (ref) => ProductController(
+        GetProductsUseCase(ref.read(productRepositoryProvider)),
+        UpsertProductUseCase(ref.read(productRepositoryProvider)),
+        DeleteProductUseCase(ref.read(productRepositoryProvider)),
+      ),
+    );
 final lowStockProductsProvider = FutureProvider<List<Product>>(
   (ref) => ref.read(productRepositoryProvider).getLowStock(),
 );
@@ -112,12 +129,12 @@ final customerRepositoryProvider = Provider<CustomerRepository>(
 );
 final customerControllerProvider =
     StateNotifierProvider<CustomerController, AsyncValue<List<Customer>>>(
-  (ref) => CustomerController(
-    GetCustomersUseCase(ref.read(customerRepositoryProvider)),
-    UpsertCustomerUseCase(ref.read(customerRepositoryProvider)),
-    DeleteCustomerUseCase(ref.read(customerRepositoryProvider)),
-  ),
-);
+      (ref) => CustomerController(
+        GetCustomersUseCase(ref.read(customerRepositoryProvider)),
+        UpsertCustomerUseCase(ref.read(customerRepositoryProvider)),
+        DeleteCustomerUseCase(ref.read(customerRepositoryProvider)),
+      ),
+    );
 
 final expenseDatasourceProvider = Provider<ExpenseLocalDatasource>(
   (ref) => ExpenseLocalDatasource(ref.read(databaseServiceProvider)),
@@ -127,12 +144,12 @@ final expenseRepositoryProvider = Provider<ExpenseRepository>(
 );
 final expenseControllerProvider =
     StateNotifierProvider<ExpenseController, AsyncValue<List<Expense>>>(
-  (ref) => ExpenseController(
-    GetExpensesUseCase(ref.read(expenseRepositoryProvider)),
-    UpsertExpenseUseCase(ref.read(expenseRepositoryProvider)),
-    DeleteExpenseUseCase(ref.read(expenseRepositoryProvider)),
-  ),
-);
+      (ref) => ExpenseController(
+        GetExpensesUseCase(ref.read(expenseRepositoryProvider)),
+        UpsertExpenseUseCase(ref.read(expenseRepositoryProvider)),
+        DeleteExpenseUseCase(ref.read(expenseRepositoryProvider)),
+      ),
+    );
 
 final stockDatasourceProvider = Provider<StockLocalDatasource>(
   (ref) => StockLocalDatasource(ref.read(databaseServiceProvider)),
@@ -142,8 +159,10 @@ final stockRepositoryProvider = Provider<StockRepository>(
 );
 final stockControllerProvider =
     StateNotifierProvider<StockController, AsyncValue<List<StockMovement>>>(
-  (ref) => StockController(GetStockMovementsUseCase(ref.read(stockRepositoryProvider))),
-);
+      (ref) => StockController(
+        GetStockMovementsUseCase(ref.read(stockRepositoryProvider)),
+      ),
+    );
 
 final productionDatasourceProvider = Provider<ProductionLocalDatasource>(
   (ref) => ProductionLocalDatasource(
@@ -154,13 +173,16 @@ final productionDatasourceProvider = Provider<ProductionLocalDatasource>(
 final productionRepositoryProvider = Provider<ProductionRepository>(
   (ref) => ProductionRepositoryImpl(ref.read(productionDatasourceProvider)),
 );
-final productionControllerProvider = StateNotifierProvider<ProductionController,
-    AsyncValue<List<ProductionRecord>>>(
-  (ref) => ProductionController(
-    GetProductionRecordsUseCase(ref.read(productionRepositoryProvider)),
-    RegisterProductionUseCase(ref.read(productionRepositoryProvider)),
-  ),
-);
+final productionControllerProvider =
+    StateNotifierProvider<
+      ProductionController,
+      AsyncValue<List<ProductionRecord>>
+    >(
+      (ref) => ProductionController(
+        GetProductionRecordsUseCase(ref.read(productionRepositoryProvider)),
+        RegisterProductionUseCase(ref.read(productionRepositoryProvider)),
+      ),
+    );
 
 final salesDatasourceProvider = Provider<SalesLocalDatasource>(
   (ref) => SalesLocalDatasource(
@@ -171,13 +193,14 @@ final salesDatasourceProvider = Provider<SalesLocalDatasource>(
 final salesRepositoryProvider = Provider<SalesRepository>(
   (ref) => SalesRepositoryImpl(ref.read(salesDatasourceProvider)),
 );
-final salesControllerProvider = StateNotifierProvider<SalesController, AsyncValue<List<Sale>>>(
-  (ref) => SalesController(
-    GetSalesUseCase(ref.read(salesRepositoryProvider)),
-    RegisterSaleUseCase(ref.read(salesRepositoryProvider)),
-    CancelSaleUseCase(ref.read(salesRepositoryProvider)),
-  ),
-);
+final salesControllerProvider =
+    StateNotifierProvider<SalesController, AsyncValue<List<Sale>>>(
+      (ref) => SalesController(
+        GetSalesUseCase(ref.read(salesRepositoryProvider)),
+        RegisterSaleUseCase(ref.read(salesRepositoryProvider)),
+        CancelSaleUseCase(ref.read(salesRepositoryProvider)),
+      ),
+    );
 
 final dashboardDatasourceProvider = Provider<DashboardLocalDatasource>(
   (ref) => DashboardLocalDatasource(ref.read(databaseServiceProvider)),
@@ -187,10 +210,10 @@ final dashboardRepositoryProvider = Provider<DashboardRepository>(
 );
 final dashboardSummaryProvider =
     StateNotifierProvider<DashboardController, AsyncValue<DashboardSummary>>(
-  (ref) => DashboardController(
-    GetDashboardSummaryUseCase(ref.read(dashboardRepositoryProvider)),
-  ),
-);
+      (ref) => DashboardController(
+        GetDashboardSummaryUseCase(ref.read(dashboardRepositoryProvider)),
+      ),
+    );
 
 final reportsDatasourceProvider = Provider<ReportsLocalDatasource>(
   (ref) => ReportsLocalDatasource(ref.read(databaseServiceProvider)),
@@ -200,5 +223,42 @@ final reportsRepositoryProvider = Provider<ReportsRepository>(
 );
 final reportsControllerProvider =
     StateNotifierProvider<ReportsController, AsyncValue<ReportSummary>>(
-  (ref) => ReportsController(GetReportSummaryUseCase(ref.read(reportsRepositoryProvider))),
+      (ref) => ReportsController(
+        GetReportSummaryUseCase(ref.read(reportsRepositoryProvider)),
+      ),
+    );
+
+final farmDatasourceProvider = Provider<FarmLocalDatasource>(
+  (ref) => FarmLocalDatasource(ref.read(databaseServiceProvider)),
 );
+
+final areasControllerProvider =
+    StateNotifierProvider<AreasController, AsyncValue<List<FarmArea>>>(
+      (ref) => AreasController(ref.read(farmDatasourceProvider)),
+    );
+
+final plantingsControllerProvider =
+    StateNotifierProvider<PlantingsController, AsyncValue<List<Planting>>>(
+      (ref) => PlantingsController(ref.read(farmDatasourceProvider)),
+    );
+
+final harvestsControllerProvider =
+    StateNotifierProvider<HarvestsController, AsyncValue<List<Harvest>>>(
+      (ref) => HarvestsController(ref.read(farmDatasourceProvider)),
+    );
+
+final farmSalesControllerProvider =
+    StateNotifierProvider<FarmSalesController, AsyncValue<List<HarvestSale>>>(
+      (ref) => FarmSalesController(ref.read(farmDatasourceProvider)),
+    );
+
+final farmExpensesControllerProvider =
+    StateNotifierProvider<
+      FarmExpensesController,
+      AsyncValue<List<FarmExpense>>
+    >((ref) => FarmExpensesController(ref.read(farmDatasourceProvider)));
+
+final modulesSettingsProvider =
+    StateNotifierProvider<ModulesSettingsController, AsyncValue<ModulesConfig>>(
+      (ref) => ModulesSettingsController(ref.read(farmDatasourceProvider)),
+    );

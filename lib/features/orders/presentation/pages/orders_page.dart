@@ -10,7 +10,9 @@ class OrdersPage extends StatelessWidget {
     return const AppScaffold(
       title: 'Encomendas',
       body: Center(
-        child: Text('Base de encomendas preparada para evolucao (status: pendente, em producao, pronto, entregue, cancelado).'),
+        child: Text(
+          'Aqui você acompanha as encomendas: pendente, em produção, pronto, entregue e cancelado.',
+        ),
       ),
     );
   }

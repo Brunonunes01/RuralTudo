@@ -26,7 +26,7 @@ class ReportsPage extends ConsumerWidget {
             const SizedBox(height: 8),
             Card(
               child: ListTile(
-                title: const Text('Despesas no periodo'),
+                title: const Text('Gastos no período'),
                 trailing: Text(Formatters.currency(report.totalExpenses)),
               ),
             ),
@@ -38,10 +38,16 @@ class ReportsPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Text('Produtos mais vendidos', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Produtos mais vendidos',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             ...report.topProducts.map((e) => ListTile(title: Text(e))),
             const SizedBox(height: 12),
-            const Text('Produtos com estoque baixo', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Produtos com estoque baixo',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             ...report.lowStockProducts.map((e) => ListTile(title: Text(e))),
             const SizedBox(height: 12),
             ListTile(
@@ -49,7 +55,10 @@ class ReportsPage extends ConsumerWidget {
               trailing: Text(report.totalProduction.toStringAsFixed(2)),
             ),
             const SizedBox(height: 12),
-            const Text('Resumo por categoria', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Resumo por categoria',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             ...report.salesByCategory.map((e) => ListTile(title: Text(e))),
           ],
         ),

@@ -19,26 +19,38 @@ class AppStatCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         child: Row(
           children: [
             if (icon != null) ...[
               CircleAvatar(
-                radius: 18,
+                radius: 20,
                 backgroundColor: (iconColor ?? colorScheme.primary).withValues(
-                  alpha: 0.12,
+                  alpha: 0.14,
                 ),
                 child: Icon(
                   icon,
-                  size: 18,
+                  size: 19,
                   color: iconColor ?? colorScheme.primary,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 13),
             ],
-            Expanded(child: Text(label)),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
             const SizedBox(width: 8),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
           ],
         ),
       ),

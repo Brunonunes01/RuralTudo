@@ -1,19 +1,19 @@
 class DashboardSummary {
   DashboardSummary({
-    required this.soldToday,
-    required this.soldMonth,
-    required this.expensesMonth,
-    required this.estimatedProfit,
-    required this.lowStockCount,
-    required this.pendingOrders,
-    required this.totalProducts,
+    required this.plantingsInProgress,
+    required this.plantingsReadyToHarvest,
+    required this.recentHarvests,
+    required this.recentSales,
+    required this.recentExpenses,
+    required this.availableFromRecentHarvests,
+    required this.estimatedProfitPeriod,
   });
 
-  final double soldToday;
-  final double soldMonth;
-  final double expensesMonth;
-  final double estimatedProfit;
-  final int lowStockCount;
-  final int pendingOrders;
-  final int totalProducts;
+  final int plantingsInProgress;
+  final int plantingsReadyToHarvest;
+  final int recentHarvests;
+  final int recentSales;
+  final int recentExpenses;
+  final double availableFromRecentHarvests;
+  final double estimatedProfitPeriod;
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_pressable_scale.dart';
+
 class AppActionButton extends StatelessWidget {
   const AppActionButton({
     required this.label,
@@ -18,6 +20,7 @@ class AppActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final child = icon == null
         ? Text(label)
         : Row(
@@ -30,10 +33,25 @@ class AppActionButton extends StatelessWidget {
           );
 
     final button = isPrimary
-        ? FilledButton(onPressed: onPressed, child: child)
-        : OutlinedButton(onPressed: onPressed, child: child);
+        ? FilledButton(
+            onPressed: onPressed,
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+            ),
+            child: child,
+          )
+        : OutlinedButton(
+            onPressed: onPressed,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: colorScheme.primary,
+              side: BorderSide(color: colorScheme.outlineVariant),
+            ),
+            child: child,
+          );
 
-    if (!expanded) return button;
-    return SizedBox(width: double.infinity, child: button);
+    final scaled = AppPressableScale(enabled: onPressed != null, child: button);
+    if (!expanded) return scaled;
+    return SizedBox(width: double.infinity, child: scaled);
   }
 }

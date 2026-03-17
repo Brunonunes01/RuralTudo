@@ -4,7 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/app_providers.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/ui/app_animated_entry.dart';
+import '../../../../core/widgets/ui/app_empty_state.dart';
+import '../../../../core/widgets/ui/app_error_state.dart';
+import '../../../../core/widgets/ui/app_feedback.dart';
 import '../../../../core/widgets/ui/app_form_text_field.dart';
+import '../../../../core/widgets/ui/app_loading_state.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../domain/entities/product.dart';
 
@@ -29,6 +34,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   Widget build(BuildContext context) {
     final productState = ref.watch(productControllerProvider);
     final categoryState = ref.watch(categoryControllerProvider);
+    final categoryMap = categoryState.maybeWhen(
+      data: (categories) => {for (final c in categories) c.id!: c.name},
+      orElse: () => <int, String>{},
+    );
 
     return AppScaffold(
       title: 'Produtos',
@@ -75,8 +84,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
               data: (products) {
                 final filtered = _filteredProducts(products);
                 if (filtered.isEmpty) {
-                  return const Center(
-                    child: Text('Nenhum produto encontrado.'),
+                  return const AppEmptyState(
+                    title: 'Nenhum produto encontrado',
+                    subtitle: 'Toque em "Adicionar" para cadastrar o primeiro.',
                   );
                 }
                 return ListView.separated(
@@ -85,51 +95,58 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                       const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final product = filtered[index];
-                    return Card(
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(12),
-                        title: Text(
-                          product.name,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            'Estoque: ${product.stockQuantity} ${product.unit} | '
-                            'Preço: ${Formatters.currency(product.salePrice)}',
+                    return AppAnimatedEntry(
+                      index: index,
+                      child: Card(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(12),
+                          title: Text(
+                            product.name,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (product.isLowStock)
-                              const Padding(
-                                padding: EdgeInsets.only(right: 6),
-                                child: Icon(
-                                  Icons.warning_amber,
-                                  color: Colors.orange,
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              'Categoria: ${categoryMap[product.categoryId] ?? 'Sem categoria'}\n'
+                              'Estoque: ${product.stockQuantity} ${product.unit} | Preço: ${Formatters.currency(product.salePrice)}',
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (product.isLowStock)
+                                const Padding(
+                                  padding: EdgeInsets.only(right: 6),
+                                  child: Icon(
+                                    Icons.warning_amber,
+                                    color: Colors.orange,
+                                  ),
                                 ),
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () =>
+                                    _showForm(context, ref, product: product),
                               ),
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined),
-                              onPressed: () =>
-                                  _showForm(context, ref, product: product),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () => ref
-                                  .read(productControllerProvider.notifier)
-                                  .remove(product.id!),
-                            ),
-                          ],
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => ref
+                                    .read(productControllerProvider.notifier)
+                                    .remove(product.id!),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Erro: $e')),
+              loading: () => const AppLoadingState(itemCount: 5),
+              error: (e, _) => AppErrorState(
+                message: e.toString(),
+                onRetry: () =>
+                    ref.read(productControllerProvider.notifier).load(),
+              ),
             ),
           ),
         ],
@@ -258,6 +275,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
             ),
             FilledButton(
               onPressed: () async {
+                if (nameController.text.trim().isEmpty) {
+                  AppFeedback.error(context, 'Informe o nome do produto.');
+                  return;
+                }
                 await ref
                     .read(productControllerProvider.notifier)
                     .save(
@@ -289,7 +310,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                           0,
                       isActive: isActive,
                     );
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  AppFeedback.success(context, 'Produto salvo com sucesso.');
+                }
               },
               child: const Text('Salvar'),
             ),

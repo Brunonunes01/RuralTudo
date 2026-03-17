@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/app_providers.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/ui/app_empty_state.dart';
+import '../../../../core/widgets/ui/app_feedback.dart';
 import '../../../../core/widgets/ui/app_form_text_field.dart';
 import '../../../products/domain/entities/product.dart';
 
@@ -24,7 +26,10 @@ class ProductionPage extends ConsumerWidget {
       body: state.when(
         data: (records) {
           if (records.isEmpty) {
-            return const Center(child: Text('Nenhum registro de produção.'));
+            return const AppEmptyState(
+              title: 'Nenhuma produção registrada',
+              subtitle: 'Toque em "Nova produção" para registrar.',
+            );
           }
 
           return ListView.separated(
@@ -142,20 +147,27 @@ class ProductionPage extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () async {
+                final qty =
+                    double.tryParse(quantity.text.replaceAll(',', '.')) ?? 0;
+                if (qty <= 0) {
+                  AppFeedback.error(context, 'Informe uma quantidade válida.');
+                  return;
+                }
                 await ref
                     .read(productionControllerProvider.notifier)
                     .register(
                       productId: productId,
                       productionType: 'harvest',
-                      quantity:
-                          double.tryParse(quantity.text.replaceAll(',', '.')) ??
-                          0,
+                      quantity: qty,
                       notes: notes.text.trim(),
                       date: selectedDate,
                     );
                 ref.invalidate(productControllerProvider);
                 ref.invalidate(stockControllerProvider);
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  AppFeedback.success(context, 'Produção salva com sucesso.');
+                }
               },
               child: const Text('Salvar'),
             ),

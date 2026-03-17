@@ -1,6 +1,6 @@
 abstract final class AppSchema {
   static const databaseName = 'ruraltudo.db';
-  static const databaseVersion = 1;
+  static const databaseVersion = 2;
 
   static const createStatements = <String>[
     '''
@@ -154,5 +154,148 @@ abstract final class AppSchema {
       processed_at TEXT
     )
     ''',
+    '''
+    CREATE TABLE areas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      area_size REAL,
+      area_unit TEXT,
+      notes TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+    ''',
+    '''
+    CREATE TABLE plantings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      area_id INTEGER NOT NULL,
+      crop_name TEXT NOT NULL,
+      variety TEXT,
+      planting_date TEXT NOT NULL,
+      expected_harvest_date TEXT,
+      cycle_days INTEGER,
+      planted_quantity REAL,
+      planted_unit TEXT,
+      initial_cost REAL NOT NULL DEFAULT 0,
+      notes TEXT,
+      status TEXT NOT NULL DEFAULT 'planted',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(area_id) REFERENCES areas(id)
+    )
+    ''',
+    '''
+    CREATE TABLE planting_managements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      planting_id INTEGER NOT NULL,
+      management_type TEXT NOT NULL,
+      date TEXT NOT NULL,
+      cost REAL,
+      description TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(planting_id) REFERENCES plantings(id)
+    )
+    ''',
+    '''
+    CREATE TABLE harvests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      planting_id INTEGER NOT NULL,
+      harvest_date TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      unit TEXT NOT NULL,
+      loss_quantity REAL,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(planting_id) REFERENCES plantings(id)
+    )
+    ''',
+    '''
+    CREATE TABLE harvest_sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      harvest_id INTEGER NOT NULL,
+      customer_id INTEGER,
+      sale_date TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      unit TEXT NOT NULL,
+      unit_price REAL NOT NULL,
+      total_amount REAL NOT NULL,
+      payment_method TEXT NOT NULL,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(harvest_id) REFERENCES harvests(id),
+      FOREIGN KEY(customer_id) REFERENCES customers(id)
+    )
+    ''',
+    '''
+    CREATE TABLE farm_expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      planting_id INTEGER,
+      category TEXT NOT NULL,
+      description TEXT NOT NULL,
+      amount REAL NOT NULL,
+      date TEXT NOT NULL,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(planting_id) REFERENCES plantings(id)
+    )
+    ''',
+    '''
+    CREATE TABLE modules_settings (
+      module_key TEXT PRIMARY KEY,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL
+    )
+    ''',
+    '''
+    CREATE TABLE app_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      profile_mode TEXT NOT NULL DEFAULT 'agriculture',
+      updated_at TEXT NOT NULL
+    )
+    ''',
+    '''
+    CREATE TABLE woodworking_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER,
+      item_name TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      unit TEXT NOT NULL DEFAULT 'un',
+      unit_price REAL,
+      total_value REAL,
+      order_date TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pendente',
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(customer_id) REFERENCES customers(id)
+    )
+    ''',
+    '''
+    CREATE TABLE woodworking_sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER,
+      sale_date TEXT NOT NULL,
+      amount REAL NOT NULL,
+      payment_method TEXT NOT NULL,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(order_id) REFERENCES woodworking_orders(id)
+    )
+    ''',
+  ];
+
+  static const migrationToV2Statements = <String>[
+    'CREATE TABLE IF NOT EXISTS areas (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, area_size REAL, area_unit TEXT, notes TEXT, is_active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS plantings (id INTEGER PRIMARY KEY AUTOINCREMENT, area_id INTEGER NOT NULL, crop_name TEXT NOT NULL, variety TEXT, planting_date TEXT NOT NULL, expected_harvest_date TEXT, cycle_days INTEGER, planted_quantity REAL, planted_unit TEXT, initial_cost REAL NOT NULL DEFAULT 0, notes TEXT, status TEXT NOT NULL DEFAULT \'planted\', created_at TEXT NOT NULL, updated_at TEXT NOT NULL, FOREIGN KEY(area_id) REFERENCES areas(id))',
+    'CREATE TABLE IF NOT EXISTS planting_managements (id INTEGER PRIMARY KEY AUTOINCREMENT, planting_id INTEGER NOT NULL, management_type TEXT NOT NULL, date TEXT NOT NULL, cost REAL, description TEXT, notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY(planting_id) REFERENCES plantings(id))',
+    'CREATE TABLE IF NOT EXISTS harvests (id INTEGER PRIMARY KEY AUTOINCREMENT, planting_id INTEGER NOT NULL, harvest_date TEXT NOT NULL, quantity REAL NOT NULL, unit TEXT NOT NULL, loss_quantity REAL, notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY(planting_id) REFERENCES plantings(id))',
+    'CREATE TABLE IF NOT EXISTS harvest_sales (id INTEGER PRIMARY KEY AUTOINCREMENT, harvest_id INTEGER NOT NULL, customer_id INTEGER, sale_date TEXT NOT NULL, quantity REAL NOT NULL, unit TEXT NOT NULL, unit_price REAL NOT NULL, total_amount REAL NOT NULL, payment_method TEXT NOT NULL, notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY(harvest_id) REFERENCES harvests(id), FOREIGN KEY(customer_id) REFERENCES customers(id))',
+    'CREATE TABLE IF NOT EXISTS farm_expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, planting_id INTEGER, category TEXT NOT NULL, description TEXT NOT NULL, amount REAL NOT NULL, date TEXT NOT NULL, notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY(planting_id) REFERENCES plantings(id))',
+    'CREATE TABLE IF NOT EXISTS modules_settings (module_key TEXT PRIMARY KEY, is_active INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS app_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, profile_mode TEXT NOT NULL DEFAULT \'agriculture\', updated_at TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS woodworking_orders (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, item_name TEXT NOT NULL, quantity REAL NOT NULL, unit TEXT NOT NULL DEFAULT \'un\', unit_price REAL, total_value REAL, order_date TEXT NOT NULL, status TEXT NOT NULL DEFAULT \'pendente\', notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY(customer_id) REFERENCES customers(id))',
+    'CREATE TABLE IF NOT EXISTS woodworking_sales (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER, sale_date TEXT NOT NULL, amount REAL NOT NULL, payment_method TEXT NOT NULL, notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY(order_id) REFERENCES woodworking_orders(id))',
   ];
 }

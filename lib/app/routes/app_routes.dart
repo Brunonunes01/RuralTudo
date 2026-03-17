@@ -1,6 +1,12 @@
 abstract final class AppRoutes {
   static const dashboard = '/';
   static const more = '/more';
+  static const areas = '/areas';
+  static const plantings = '/plantings';
+  static const harvests = '/harvests';
+  static const management = '/management';
+  static const results = '/results';
+  static const woodworking = '/woodworking';
   static const categories = '/categories';
   static const products = '/products';
   static const production = '/production';

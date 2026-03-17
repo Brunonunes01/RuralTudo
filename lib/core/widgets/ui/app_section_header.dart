@@ -24,8 +24,13 @@ class AppSectionHeader extends StatelessWidget {
             children: [
               Text(title, style: textTheme.titleLarge),
               if (subtitle case final subtitle?) ...[
-                const SizedBox(height: 4),
-                Text(subtitle, style: textTheme.bodyMedium),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ],
           ),

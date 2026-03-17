@@ -1,6 +1,6 @@
 abstract final class AppSchema {
   static const databaseName = 'ruraltudo.db';
-  static const databaseVersion = 2;
+  static const databaseVersion = 3;
 
   static const createStatements = <String>[
     '''
@@ -159,8 +159,11 @@ abstract final class AppSchema {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       description TEXT,
-      area_size REAL,
-      area_unit TEXT,
+      observations TEXT,
+      area_m2 REAL,
+      area_hectares REAL,
+      perimeter REAL,
+      polygon_points TEXT,
       notes TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
@@ -297,5 +300,15 @@ abstract final class AppSchema {
     'CREATE TABLE IF NOT EXISTS app_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, profile_mode TEXT NOT NULL DEFAULT \'agriculture\', updated_at TEXT NOT NULL)',
     'CREATE TABLE IF NOT EXISTS woodworking_orders (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, item_name TEXT NOT NULL, quantity REAL NOT NULL, unit TEXT NOT NULL DEFAULT \'un\', unit_price REAL, total_value REAL, order_date TEXT NOT NULL, status TEXT NOT NULL DEFAULT \'pendente\', notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY(customer_id) REFERENCES customers(id))',
     'CREATE TABLE IF NOT EXISTS woodworking_sales (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER, sale_date TEXT NOT NULL, amount REAL NOT NULL, payment_method TEXT NOT NULL, notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY(order_id) REFERENCES woodworking_orders(id))',
+  ];
+
+  static const migrationToV3Statements = <String>[
+    'ALTER TABLE areas ADD COLUMN observations TEXT',
+    'ALTER TABLE areas ADD COLUMN area_m2 REAL',
+    'ALTER TABLE areas ADD COLUMN area_hectares REAL',
+    'ALTER TABLE areas ADD COLUMN perimeter REAL',
+    'ALTER TABLE areas ADD COLUMN polygon_points TEXT',
+    "UPDATE areas SET area_m2 = CASE WHEN area_unit = 'ha' OR area_unit = 'HA' THEN COALESCE(area_size, 0) * 10000 ELSE area_size END WHERE area_m2 IS NULL",
+    "UPDATE areas SET area_hectares = CASE WHEN area_m2 IS NULL THEN NULL ELSE area_m2 / 10000 END WHERE area_hectares IS NULL",
   ];
 }

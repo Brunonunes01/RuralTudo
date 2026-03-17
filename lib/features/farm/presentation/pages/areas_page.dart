@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../app/routes/app_routes.dart';
 import '../../../../core/di/app_providers.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/ui/app_empty_state.dart';
-import '../../../../core/widgets/ui/app_feedback.dart';
-import '../../../../core/widgets/ui/app_form_text_field.dart';
+import '../../../../core/widgets/ui/app_error_state.dart';
+import '../../../../core/widgets/ui/app_loading_state.dart';
 import '../../domain/entities/farm_area.dart';
+import 'area_form_page.dart';
 
 class AreasPage extends ConsumerWidget {
   const AreasPage({super.key});
@@ -18,7 +22,7 @@ class AreasPage extends ConsumerWidget {
     return AppScaffold(
       title: 'Áreas',
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showForm(context, ref),
+        onPressed: () => context.push(AppRoutes.areaForm),
         icon: const Icon(Icons.add),
         label: const Text('Nova área'),
       ),
@@ -27,9 +31,11 @@ class AreasPage extends ConsumerWidget {
           if (areas.isEmpty) {
             return const AppEmptyState(
               title: 'Nenhuma área cadastrada',
-              subtitle: 'Exemplo: Horta do fundo, Talhão 1, Área do milho.',
+              subtitle:
+                  'Toque em "Nova área" para desenhar no mapa e cadastrar.',
             );
           }
+
           return ListView.separated(
             itemCount: areas.length,
             separatorBuilder: (context, index) => const SizedBox(height: 10),
@@ -38,134 +44,57 @@ class AreasPage extends ConsumerWidget {
               return Card(
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(12),
+                  onTap: () => context.push(
+                    AppRoutes.areaForm,
+                    extra: AreaFormPageArgs(area: area),
+                  ),
                   title: Text(
                     area.name,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  subtitle: Text(
-                    [
-                      if (area.areaSize != null)
-                        '${area.areaSize!.toStringAsFixed(2)} ${area.areaUnit ?? ''}'
-                            .trim(),
-                      if (area.description?.isNotEmpty == true)
-                        area.description!,
-                    ].join(' | '),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(_subtitle(area)),
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (!area.isActive)
-                        const Padding(
-                          padding: EdgeInsets.only(right: 8),
-                          child: Text('Inativa'),
-                        ),
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => _showForm(context, ref, area: area),
-                      ),
-                    ],
-                  ),
+                  trailing: const Icon(Icons.chevron_right),
                 ),
               );
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erro: $e')),
+        loading: () => const AppLoadingState(itemCount: 4),
+        error: (e, _) => AppErrorState(
+          message: e.toString(),
+          onRetry: () => ref.read(areasControllerProvider.notifier).load(),
+        ),
       ),
     );
   }
 
-  Future<void> _showForm(
-    BuildContext context,
-    WidgetRef ref, {
-    FarmArea? area,
-  }) async {
-    final name = TextEditingController(text: area?.name ?? '');
-    final description = TextEditingController(text: area?.description ?? '');
-    final areaSize = TextEditingController(
-      text: (area?.areaSize ?? '').toString(),
-    );
-    final areaUnit = TextEditingController(text: area?.areaUnit ?? 'm²');
-    final notes = TextEditingController(text: area?.notes ?? '');
-    var isActive = area?.isActive ?? true;
+  String _subtitle(FarmArea area) {
+    if ((area.areaM2 ?? 0) <= 0) {
+      return area.description?.isNotEmpty == true
+          ? area.description!
+          : 'Área sem desenho cadastrado';
+    }
 
-    await showDialog<void>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(area == null ? 'Nova área' : 'Editar área'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppFormTextField(controller: name, label: 'Nome da área'),
-                const SizedBox(height: 8),
-                AppFormTextField(controller: description, label: 'Descrição'),
-                const SizedBox(height: 8),
-                AppFormTextField(
-                  controller: areaSize,
-                  label: 'Tamanho (opcional)',
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 8),
-                AppFormTextField(
-                  controller: areaUnit,
-                  label: 'Unidade (m², ha, etc.)',
-                ),
-                const SizedBox(height: 8),
-                AppFormTextField(
-                  controller: notes,
-                  label: 'Observações',
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: isActive,
-                  onChanged: (value) => setState(() => isActive = value),
-                  title: const Text('Área ativa'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                if (name.text.trim().isEmpty) {
-                  AppFeedback.error(context, 'Informe o nome da área.');
-                  return;
-                }
+    final parts = <String>[
+      '${Formatters.hectares(area.areaHectares ?? 0)} ha',
+      '${Formatters.decimal(area.areaM2 ?? 0)} m²',
+    ];
 
-                await ref
-                    .read(areasControllerProvider.notifier)
-                    .save(
-                      FarmArea(
-                        id: area?.id,
-                        name: name.text.trim(),
-                        description: description.text.trim(),
-                        areaSize: double.tryParse(
-                          areaSize.text.replaceAll(',', '.'),
-                        ),
-                        areaUnit: areaUnit.text.trim(),
-                        notes: notes.text.trim(),
-                        isActive: isActive,
-                      ),
-                    );
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  AppFeedback.success(context, 'Área salva com sucesso.');
-                }
-              },
-              child: const Text('Salvar'),
-            ),
-          ],
-        ),
-      ),
-    );
+    if ((area.perimeter ?? 0) > 0) {
+      parts.add('Perímetro: ${Formatters.decimal(area.perimeter ?? 0)} m');
+    }
+
+    if (area.description?.isNotEmpty == true) {
+      parts.add(area.description!);
+    }
+
+    if (!area.isActive) {
+      parts.add('Inativa');
+    }
+
+    return parts.join(' | ');
   }
 }

@@ -2,6 +2,8 @@ abstract final class AppRoutes {
   static const dashboard = '/';
   static const more = '/more';
   static const areas = '/areas';
+  static const areaForm = '/areas/form';
+  static const areaMap = '/areas/map';
   static const plantings = '/plantings';
   static const harvests = '/harvests';
   static const management = '/management';

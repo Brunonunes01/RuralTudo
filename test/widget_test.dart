@@ -7,6 +7,6 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: RuralTudoApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Início'), findsOneWidget);
   });
 }

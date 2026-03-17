@@ -34,6 +34,17 @@ class DatabaseService {
           }
           await _seedModuleSettings(db);
         }
+        if (oldVersion < 3) {
+          for (final sql in AppSchema.migrationToV3Statements) {
+            try {
+              await db.execute(sql);
+            } on DatabaseException catch (e) {
+              if (!e.toString().contains('duplicate column name')) {
+                rethrow;
+              }
+            }
+          }
+        }
       },
     );
   }

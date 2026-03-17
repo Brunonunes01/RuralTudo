@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 
 import '../../../../core/database/database_service.dart';
@@ -23,8 +25,25 @@ class FarmLocalDatasource {
             id: e['id'] as int,
             name: e['name'] as String,
             description: e['description'] as String?,
-            areaSize: (e['area_size'] as num?)?.toDouble(),
-            areaUnit: e['area_unit'] as String?,
+            observations: e['observations'] as String?,
+            areaM2:
+                (e['area_m2'] as num?)?.toDouble() ??
+                (e['area_size'] as num?)?.toDouble(),
+            areaHectares:
+                (e['area_hectares'] as num?)?.toDouble() ??
+                ((e['area_size'] as num?)?.toDouble() != null
+                    ? ((e['area_unit'] as String?)?.toLowerCase() == 'ha'
+                          ? (e['area_size'] as num).toDouble()
+                          : (e['area_size'] as num).toDouble() / 10000)
+                    : null),
+            perimeter: (e['perimeter'] as num?)?.toDouble(),
+            polygonPoints: _decodePolygonPoints(e['polygon_points'] as String?),
+            createdAt: (e['created_at'] as String?) == null
+                ? null
+                : DateTime.parse(e['created_at'] as String),
+            updatedAt: (e['updated_at'] as String?) == null
+                ? null
+                : DateTime.parse(e['updated_at'] as String),
             notes: e['notes'] as String?,
             isActive: (e['is_active'] as int) == 1,
           ),
@@ -38,8 +57,13 @@ class FarmLocalDatasource {
     final map = {
       'name': area.name,
       'description': area.description,
-      'area_size': area.areaSize,
-      'area_unit': area.areaUnit,
+      'observations': area.observations,
+      'area_m2': area.areaM2,
+      'area_hectares': area.areaHectares,
+      'perimeter': area.perimeter,
+      'polygon_points': jsonEncode(
+        area.polygonPoints.map((point) => point.toJson()).toList(),
+      ),
       'notes': area.notes,
       'is_active': area.isActive ? 1 : 0,
       'updated_at': now,
@@ -51,6 +75,18 @@ class FarmLocalDatasource {
     }
 
     await db.update('areas', map, where: 'id = ?', whereArgs: [area.id]);
+  }
+
+  List<FarmAreaPoint> _decodePolygonPoints(String? raw) {
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map((item) => FarmAreaPoint.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<List<Planting>> getPlantings() async {
